@@ -232,20 +232,27 @@ class FigureRegistry:
         passing it to `show`.
 
         """
-        for fig in self.figures:
-            if fig.canvas.manager is not None:
-                fig.canvas.manager.destroy()
+        for fig in list(self.figures):
+            self.close(fig)
+
+    def close(self, val):
+        if val == "all":
+            return self.close_all()
+        # or do we want to close _all_ of the figures with a given label / number?
+        if isinstance(val, str):
+            fig = self.by_label[val]
+        elif isinstance(val, int):
+            fig = self.by_number[val]
+        else:
+            fig = val
+        if fig.canvas.manager is not None:
+            fig.canvas.manager.destroy()
             # disconnect figure from canvas
             fig.canvas.figure = None
             # disconnect canvas from figure
             _FigureCanvasBase(figure=fig)
-        self.figures.clear()
-
-    def close(self, val):
-        if val != "all":
-            # TODO close figures 1 at a time
-            raise RuntimeError("can only close them all")
-        self.close_all()
+        if fig in self.figures:
+            self.figures.remove(fig)
 
 
 class FigureContext(FigureRegistry):
