@@ -113,10 +113,12 @@ def test_labels_collision():
     fr = mg.FigureRegistry(block=False)
     for j in range(5):
         fr.figure(label="aardvark")
-    assert list(fr.by_label) == ["aardvark"]
+    with pytest.warns(UserWarning, match="{'aardvark': 5}"):
+        assert list(fr.by_label) == ["aardvark"]
     assert len(fr.figures) == 5
     assert len(set(fr.figures)) == 5
-    assert fr.figures[-1] is fr.by_label["aardvark"]
+    with pytest.warns(UserWarning, match="{'aardvark': 5}"):
+        assert fr.figures[-1] is fr.by_label["aardvark"]
     fr.close_all()
     assert len(fr.by_label) == 0
 

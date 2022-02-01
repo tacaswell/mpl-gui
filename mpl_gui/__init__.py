@@ -12,9 +12,11 @@ This will enable users to both only use the explicit API (nee OO interface) and
 to have smooth integration with the GUI event loop as with pyplot.
 
 """
-import logging
-import functools
+from collections import Counter
 from itertools import count
+import functools
+import logging
+import warnings
 
 from matplotlib.backend_bases import FigureCanvasBase as _FigureCanvasBase
 
@@ -150,7 +152,18 @@ class FigureRegistry:
 
         If there are duplicate labels, newer figures will take precedence.
         """
-        return {fig.get_label(): fig for fig in self.figures}
+        mapping = {fig.get_label(): fig for fig in self.figures}
+        if len(mapping) != len(self.figures):
+            counts = Counter(fig.get_label() for fig in self.figures)
+            multiples = {k: v for k, v in counts.items() if v > 1}
+            warnings.warn(
+                (
+                    "There are repeated labels but only one figure with a given label can be return. "
+                    + f"The repeated labels are {multiples!r}."
+                ),
+                stacklevel=2,
+            )
+        return mapping
 
     @functools.wraps(figure)
     def figure(self, *args, **kwargs):
