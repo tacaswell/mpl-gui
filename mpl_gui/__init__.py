@@ -165,6 +165,15 @@ class FigureRegistry:
             )
         return mapping
 
+    @property
+    def by_number(self):
+        """
+        Return a dictionary of the current mapping number -> figures.
+
+        """
+        self._promote_and_number()
+        return {fig.canvas.manager.num: fig for fig in self.figures}
+
     @functools.wraps(figure)
     def figure(self, *args, **kwargs):
         fig = figure(*args, **kwargs)
@@ -179,6 +188,18 @@ class FigureRegistry:
     def subplot_mosaic(self, *args, **kwargs):
         fig, axd = subplot_mosaic(*args, **kwargs)
         return self._register_fig(fig), axd
+
+    def _promote_and_number(self):
+        promoted_figures = []
+        unpromotod_figures = []
+        for f in self.figures:
+            if f.canvas.manager is not None:
+                promoted_figures.append(f)
+            else:
+                unpromotod_figures.append(f)
+        next_num = max([f.canvas.manager.num for f in promoted_figures], default=0) + 1
+        for num, fig in enumerate(unpromotod_figures, start=next_num):
+            promote_figure(fig, num=num)
 
     def show_all(self, *, block=None, timeout=None):
         """
@@ -211,7 +232,7 @@ class FigureRegistry:
 
         if timeout is None:
             timeout = self._timeout
-
+        self._promote_and_number()
         show(self.figures, block=self._block, timeout=self._timeout)
 
     # alias to easy pyplot compatibility
