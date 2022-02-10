@@ -158,8 +158,8 @@ class FigureRegistry:
             multiples = {k: v for k, v in counts.items() if v > 1}
             warnings.warn(
                 (
-                    "There are repeated labels but only one figure with a given label can be return. "
-                    + f"The repeated labels are {multiples!r}."
+                    f"There are repeated labels ({multiples!r}), but only the newest figure with that label can "
+                    "be returned. "
                 ),
                 stacklevel=2,
             )
