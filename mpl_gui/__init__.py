@@ -143,6 +143,8 @@ class FigureRegistry:
         fignum = next(self._count)
         if fig.get_label() == "":
             fig.set_label(f"{self._prefix}{fignum:d}")
+        # TODO: is there a better way to track this than monkey patching?
+        fig._mpl_gui_fignum = fignum
         return fig
 
     @property
@@ -171,7 +173,7 @@ class FigureRegistry:
         Return a dictionary of the current mapping number -> figures.
 
         """
-        self._promote_and_number()
+        self._ensure_all_figures_promoted()
         return {fig.canvas.manager.num: fig for fig in self.figures}
 
     @functools.wraps(figure)
@@ -189,17 +191,10 @@ class FigureRegistry:
         fig, axd = subplot_mosaic(*args, **kwargs)
         return self._register_fig(fig), axd
 
-    def _promote_and_number(self):
-        promoted_figures = []
-        unpromotod_figures = []
+    def _ensure_all_figures_promoted(self):
         for f in self.figures:
-            if f.canvas.manager is not None:
-                promoted_figures.append(f)
-            else:
-                unpromotod_figures.append(f)
-        next_num = max([f.canvas.manager.num for f in promoted_figures], default=0) + 1
-        for num, fig in enumerate(unpromotod_figures, start=next_num):
-            promote_figure(fig, num=num)
+            if f.canvas.manager is None:
+                promote_figure(f, num=f._mpl_gui_fignum)
 
     def show_all(self, *, block=None, timeout=None):
         """
@@ -232,7 +227,7 @@ class FigureRegistry:
 
         if timeout is None:
             timeout = self._timeout
-        self._promote_and_number()
+        self._ensure_all_figures_promoted()
         show(self.figures, block=self._block, timeout=self._timeout)
 
     # alias to easy pyplot compatibility
